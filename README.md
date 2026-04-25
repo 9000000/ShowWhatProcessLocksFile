@@ -2,11 +2,12 @@
 
 A simple clone of [PowerToys File Locksmith](https://learn.microsoft.com/en-us/windows/powertoys/file-locksmith) utility to discover what processes lock a specific file or folder.
 
-## Advantages over File Locksmith
-* Much faster
+## Features
+* Very fast
 * Lightweight
 * Supports older versions of Windows
-* Doesn't require admin rights to be installed
+* Doesn't require admin rights
+* Also shows locks on network shares and mounted drives
 
 ## Screenshots
 
@@ -20,7 +21,7 @@ A simple clone of [PowerToys File Locksmith](https://learn.microsoft.com/en-us/w
 
 ## System requirements
 
-* Windows 7 x64 or higher (you might need to install `.Net Framework 4.7.2`)
+* Windows 10 x64 or higher
 
 ## How to use
 

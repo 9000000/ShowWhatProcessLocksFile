@@ -5,7 +5,7 @@ namespace ShowWhatProcessLocksFile.Utils;
 
 internal static class CommandLineParser
 {
-    public static string GetFileFullName()
+    public static CanonicalPath GetFileFullName()
     {
         var args = Environment.GetCommandLineArgs();
 
@@ -24,7 +24,7 @@ internal static class CommandLineParser
             throw new Exception($"'{args[1]}' doesn't exist");
         }
 
-        return PathUtils.ToCanonicalPath(args[1]);
+        return new CanonicalPath(args[1]);
     }
 
     private static bool Exists(string path)

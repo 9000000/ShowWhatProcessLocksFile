@@ -14,11 +14,11 @@ public record struct ProcessInfo(
     ImageSource? Icon,
     List<string> LockedFileFullNames);
 
-public static class LockFinder
+internal static class LockFinder
 {
-    public static IEnumerable<ProcessInfo> FindWhatProcessesLockPath(string path)
+    public static IEnumerable<ProcessInfo> FindWhatProcessesLockPath(CanonicalPath path)
     {
-        path = PathUtils.ToCanonicalPath(path);
+        var devicePathToDrivePathConverter = new DevicePathToDrivePathConverter();
         var currentProcess = WinApi.GetCurrentProcess();
         var result = new List<ProcessInfo>();
 
@@ -28,10 +28,11 @@ public static class LockFinder
         SafeProcessHandle? currentOpenedProcess = null;
         var currentLockedFiles = new List<string>();
         SafeFileHandle? currentDupHandle = null;
+        ushort? fileHandleObjectTypeIndex = null;
 
         while (currentProcessIndex < processes.Length)
         {
-            new WorkerThreadWithDeadLockDetection(TimeSpan.FromMilliseconds(50), watchdog =>
+            WorkerThreadWithDeadLockDetection.Run(TimeSpan.FromMilliseconds(50), watchdog =>
             {
                 while (currentProcessIndex < processes.Length)
                 {
@@ -56,6 +57,11 @@ public static class LockFinder
                         var h = handles[currentHandleIndex];
                         currentHandleIndex++;
 
+                        if (fileHandleObjectTypeIndex is not null && h.ObjectTypeIndex != fileHandleObjectTypeIndex)
+                        {
+                            continue;
+                        }
+
                         currentDupHandle = WinApi.DuplicateHandle(currentProcess, currentOpenedProcess, h);
                         if (currentDupHandle.IsInvalid)
                         {
@@ -63,24 +69,47 @@ public static class LockFinder
                         }
 
                         watchdog.Arm();
-                        var lockedFileName = WinApi.GetFinalPathNameByHandle(currentDupHandle);
-                        watchdog.Disarm();
+                        string? lockedFileName = null;
+                        try
+                        {
+                            if(NtDll.GetHandleType(currentDupHandle) != "File")
+                            {
+                                continue;
+                            }
+                            fileHandleObjectTypeIndex = h.ObjectTypeIndex;
+                            lockedFileName = NtDll.GetHandleName(currentDupHandle);
+                        }
+                        catch (Exception)
+                        {
+                        }
+                        finally
+                        {
+                            watchdog.Disarm();
+                        }
+
+                        if (lockedFileName == null)
+                        {
+                            continue;
+                        }
+
+                        lockedFileName = ToWindowsPath(devicePathToDrivePathConverter, lockedFileName);
                         if (lockedFileName is null)
                         {
                             continue;
                         }
 
                         lockedFileName = PathUtils.AddTrailingSeparatorIfItIsAFolder(lockedFileName);
-                        if (path.EndsWith('\\') && lockedFileName.StartsWith(path, StringComparison.InvariantCultureIgnoreCase)
-                            || string.Equals(lockedFileName, path, StringComparison.InvariantCultureIgnoreCase))
+                        if (path.IsDirectory && lockedFileName.StartsWith(path.Path, StringComparison.InvariantCultureIgnoreCase)
+                            || string.Equals(lockedFileName, path.Path, StringComparison.InvariantCultureIgnoreCase))
                         {
                             currentLockedFiles.Add(lockedFileName);
                         }
                     }
 
                     var moduleNames = ProcessUtils.GetProcessModules(currentOpenedProcess)
-                                                  .Where(name => path.EndsWith('\\') && name.StartsWith(path, StringComparison.InvariantCultureIgnoreCase)
-                                                                 || string.Equals(name, path, StringComparison.InvariantCultureIgnoreCase)).ToList();
+                                                  .Select(name => ToWindowsPath(devicePathToDrivePathConverter, name) ?? name)
+                                                  .Where(name => path.IsDirectory && name.StartsWith(path.Path, StringComparison.InvariantCultureIgnoreCase)
+                                                                 || string.Equals(name, path.Path, StringComparison.InvariantCultureIgnoreCase)).ToList();
 
                     if (currentLockedFiles.Any() || moduleNames.Any())
                     {
@@ -106,9 +135,26 @@ public static class LockFinder
                     currentOpenedProcess = null;
                     currentProcessIndex++;
                 }
-            }).Run();
+            });
         }
 
         return result;
+    }
+
+    private static string? ToWindowsPath(DevicePathToDrivePathConverter devicePathToDrivePathConverter, string devicePath)
+    {
+        // Network file or folder like "\Device\Mup\wsl.localhost\Ubuntu-24.04\home\user"
+        // Convert it to UNC path like "\\wsl.localhost\Ubuntu-24.04\home\user\"
+        if (devicePath.StartsWith("\\Device\\Mup\\"))
+        {
+            return PathUtils.AddTrailingSeparatorIfItIsAFolder("\\" + devicePath.Substring(11));
+        }
+
+        if(devicePath.StartsWith("\\Device\\") && devicePathToDrivePathConverter.GetDriveLetterBasedFullName(devicePath) is { } path)
+        {
+            return PathUtils.AddTrailingSeparatorIfItIsAFolder(path);
+        }
+
+        return null;
     }
 }

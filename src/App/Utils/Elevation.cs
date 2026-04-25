@@ -1,3 +1,4 @@
+using ShowWhatProcessLocksFile.LockFinding.Utils;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -7,14 +8,12 @@ namespace ShowWhatProcessLocksFile.Utils;
 
 internal static class Elevation
 {
-    public static void RestartAsAdmin(string path)
+    public static void RestartAsAdmin(CanonicalPath canonicalPath)
     {
-        // some of `\` signs can be interpreted as escape sequences.
-        path = path.Replace("\\", "/");
-
         new Process
         {
-            StartInfo = new ProcessStartInfo(Assembly.GetExecutingAssembly().Location, $"\"{path}\"")
+            // some of `\` signs can be interpreted as escape sequences.
+            StartInfo = new ProcessStartInfo(Assembly.GetExecutingAssembly().Location, $"\"{canonicalPath.Path.Replace("\\", "/")}\"")
             {
                 UseShellExecute = true,
                 Verb = "runas"

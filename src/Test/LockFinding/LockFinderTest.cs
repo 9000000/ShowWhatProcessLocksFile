@@ -1,18 +1,21 @@
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
+using Polyfills;
 using ShowWhatProcessLocksFile.LockFinding;
+using ShowWhatProcessLocksFile.LockFinding.Utils;
+using System.IO;
 
 namespace Test.LockFinding;
 
 [TestFixture]
 [Parallelizable(scope: ParallelScope.All)]
-public class LockFinderTest
+internal class LockFinderTest
 {
     [TestCase(@"C:\PathThatDoesNotExist")]
     [TestCase(@"C:\Windows\system.ini")] // existing but not locked path
     public void Returns_empty_list_If_path_does_not_exist_or_not_locked(string path)
     {
-        var processes = LockFinder.FindWhatProcessesLockPath(path);
+        var processes = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(path));
         ClassicAssert.IsEmpty(processes);
     }
 
@@ -94,7 +97,7 @@ public class LockFinderTest
         })]
     public void If_path_is_locked_Returns_information_about_processes_that_lock_this_path(string path, string processName, IEnumerable<string> pathThatShouldBeLocked)
     {
-        var processes = LockFinder.FindWhatProcessesLockPath(path).ToList();
+        var processes = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(path)).ToList();
 
         var info = AssertContainsProcessInfo(
             processes,
@@ -112,11 +115,66 @@ public class LockFinderTest
     [Test]
     public void Returns_only_information_related_to_the_requested_path()
     {
-        var processes = LockFinder.FindWhatProcessesLockPath(@"C:\Program Files").ToList();
+        var processes = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(@"C:\Program Files")).ToList();
         foreach (var lockedPath in processes.SelectMany(proc => proc.LockedFileFullNames))
         {
             StringAssert.DoesNotStartWith(@"C:\Program Files (x86)", lockedPath);
         }
+    }
+
+    [Test]
+    [Explicit]
+    public void TestPerformance()
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        for (int i = 0; i < 5; i++)
+        {
+            var processes = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(@"C:\Program Files")).ToList();
+            Console.WriteLine($"Iteration {i}. FindWhatProcessesLockPath took {stopwatch.Elapsed}. Process count {processes.Count}");
+        }
+        stopwatch.Stop();
+        Console.WriteLine($"Whole test took {stopwatch.Elapsed}");
+    }
+
+    // This test requires a network share drive. I used WSL.
+    [Test]
+    [Explicit]
+    public void Shows_files_locked_on_network_share_drive()
+    {
+        var uniqueTmpFileOnSharedDrive = $@"\\wsl.localhost\Ubuntu-24.04\var\tmp\uniqueTmpFile_{Guid.NewGuid():N}.txt";
+
+        try
+        {
+            using (File.Create(uniqueTmpFileOnSharedDrive))
+            {
+                var infos = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(uniqueTmpFileOnSharedDrive)).ToList();
+                Assert.Greater(infos.Count, 0);
+                AssertLocksPath(infos[0], uniqueTmpFileOnSharedDrive);
+
+                infos = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(@"\\wsl.localhost\Ubuntu-24.04\var\tmp")).ToList();
+                Assert.Greater(infos.Count, 0);
+                AssertLocksPath(infos[0], uniqueTmpFileOnSharedDrive);
+            }
+        }
+        finally
+        {
+            if (File.Exists(uniqueTmpFileOnSharedDrive))
+            {
+                File.Delete(uniqueTmpFileOnSharedDrive);
+            }
+        }
+    }
+
+    // This test requires a mounted drive. I used Cryptomator with mounting type "WinFsp (Local Drive)"
+    [Test]
+    [Explicit]
+    public void Shows_files_locked_on_mounted_drives()
+    {
+        var file = @"E:\test\test_doc.docx";
+
+        var infos = LockFinder.FindWhatProcessesLockPath(new CanonicalPath(file)).ToList();
+        Assert.Greater(infos.Count, 0);
+        AssertLocksPath(infos[0], file);
     }
 
     private static ProcessInfo AssertContainsProcessInfo(IEnumerable<ProcessInfo> processes, Predicate<ProcessInfo> condition, string? errorMessage = null)

@@ -13,16 +13,18 @@
     </Feature>
   </Package>
   <Fragment>
-    <StandardDirectory Id="AppDataFolder">
-      <Directory Id="INSTALLFOLDER" Name="ShowWhatProcessLocksFile"/>
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="ShowWhatProcessLocksFile"/>
+      </Directory>
     </StandardDirectory>
   </Fragment>
   <Fragment>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="ProductComponent" Guid="18A44A77-A0C6-4CE7-9CE5-88ECBEF62B14">
-        <File Id="ShowWhatProcessLocksFile.exe" Source="$(var.ShowWhatProcessLocksFile.TargetDir)\ShowWhatProcessLocksFile.exe"/>
-        <File Id="ShowWhatProcessLocksFile.exe.config" Source="$(var.ShowWhatProcessLocksFile.TargetDir)\ShowWhatProcessLocksFile.exe.config"/>
-        <File Id="icon.ico" Source="$(var.ShowWhatProcessLocksFile.ProjectDir)\Icon\icon.ico"/>
+        <File Id="id1" Source="$(var.ShowWhatProcessLocksFile.TargetDir)\ShowWhatProcessLocksFile.exe"/>
+        <File Id="id2" Source="$(var.ShowWhatProcessLocksFile.TargetDir)\ShowWhatProcessLocksFile.exe.config"/>
+        <File Id="id3" Source="$(var.ShowWhatProcessLocksFile.ProjectDir)\Icon\icon.ico"/>
 
         <!-- https://stackoverflow.com/a/29769228/7585517 -->
         <RegistryKey Root="HKCU" Key="Software\Classes\*\shell\ShowWhatProcessLocksFile">

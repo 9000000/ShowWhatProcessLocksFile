@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace ShowWhatProcessLocksFile.LockFinding.Interop;
 
-public static class NtDll
+internal static class NtDll
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX

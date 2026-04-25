@@ -58,7 +58,7 @@ dotnet build `
   /property:DebugType=None `
   /property:Version=$version `
   /property:InstallerVersion=$installerVersion `
-  "$root/ShowWhatProcessLocksFile.sln"
+  $root/ShowWhatProcessLocksFile.slnx
 CheckReturnCodeOfPreviousCommand "build failed"
 
 Info "Run tests"
@@ -68,7 +68,7 @@ dotnet test `
   --configuration Release `
   -verbosity:minimal `
   --logger:"console;verbosity=normal" `
-  $root/ShowWhatProcessLocksFile.sln
+  $root/ShowWhatProcessLocksFile.slnx
 CheckReturnCodeOfPreviousCommand "tests failed"
 
 Info "Create zip archive from msi installer"

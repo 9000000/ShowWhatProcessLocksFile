@@ -1,6 +1,7 @@
 using ShowWhatProcessLocksFile.Gui.Controls;
 using ShowWhatProcessLocksFile.Gui.Utils;
 using ShowWhatProcessLocksFile.LockFinding;
+using ShowWhatProcessLocksFile.LockFinding.Utils;
 using ShowWhatProcessLocksFile.Utils;
 
 namespace ShowWhatProcessLocksFile.Gui;
@@ -13,7 +14,7 @@ internal class MainWindowViewModel : ViewModelBase
 
     public RelayCommand RestartAsAdministratorCommand { get; }
 
-    public string FilePath { get; }
+    public CanonicalPath FilePath { get; }
 
     private ViewModelBase? mainControl;
 
@@ -28,7 +29,7 @@ internal class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public MainWindowViewModel(string filePath)
+    public MainWindowViewModel(CanonicalPath filePath)
     {
         FilePath = filePath;
         RefreshCommand = new RelayCommand(GetLockingInformation, () => mainControl is not ProgressBarWithTextViewModel);

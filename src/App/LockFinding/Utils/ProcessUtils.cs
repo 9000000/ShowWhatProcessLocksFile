@@ -11,7 +11,7 @@ using ShowWhatProcessLocksFile.LockFinding.Interop;
 
 namespace ShowWhatProcessLocksFile.LockFinding.Utils;
 
-public static class ProcessUtils
+internal static class ProcessUtils
 {
     public static string? GetOwnerDomainAndUserName(SafeProcessHandle openedProcess)
     {
@@ -65,7 +65,7 @@ public static class ProcessUtils
             var moduleHandles = new IntPtr[arraySize];
             if (!WinApi.EnumProcessModules(openedProc, moduleHandles, IntPtr.Size * moduleHandles.Length, out var bytesNeeded))
             {
-                return Array.Empty<string>();
+                return [];
             }
 
             var numberOfModules = bytesNeeded / IntPtr.Size;
@@ -86,6 +86,11 @@ public static class ProcessUtils
             var name = GetModuleName(openedProc, moduleHandle);
             if (name != null)
             {
+                // Some module names are prefixed with "\\?\". For example: "\\?\C:\Windows\System32\ntdll.dll".
+                if (name.StartsWith(@"\\?"))
+                {
+                    name = name.Substring(4);
+                }
                 yield return name;
             }
         }

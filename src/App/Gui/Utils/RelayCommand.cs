@@ -2,7 +2,7 @@ using System.Windows.Input;
 
 namespace ShowWhatProcessLocksFile.Gui.Utils;
 
-public class RelayCommand : ICommand
+internal class RelayCommand : ICommand
 {
     public event EventHandler CanExecuteChanged
     {
@@ -35,7 +35,7 @@ public class RelayCommand : ICommand
     }
 }
 
-public class RelayCommand<T> : ICommand
+internal class RelayCommand<T> : ICommand
 {
     public event EventHandler CanExecuteChanged
     {

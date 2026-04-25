@@ -26,7 +26,7 @@
                 <ColumnDefinition Width="auto" />
             </Grid.ColumnDefinitions>
 
-            <TextBox Margin="2" Grid.Column="0" IsReadOnly="True" Text="{Binding FilePath, Mode=OneWay}" FontSize="14"
+            <TextBox Margin="2" Grid.Column="0" IsReadOnly="True" Text="{Binding FilePath.Path, Mode=OneWay}" FontSize="14"
                      Padding="0,2,0,2" />
             <Button Grid.Column="1" Margin="2"
                     Command="{Binding RefreshCommand}"
