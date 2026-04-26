@@ -26,10 +26,10 @@ A simple clone of [PowerToys File Locksmith](https://learn.microsoft.com/en-us/w
 ## How to use
 
 * Download `ShowWhatProcessLocksFile.msi.zip` from the latest [release](https://github.com/PolarGoose/ShowWhatProcessLocksFile/releases).
-* Run the installer. The installer will install this program to the `%AppData%\ShowWhatProcessLocksFile` folder and add a `Show what locks this file` Windows File Explorer context menu element.
-* Use `Show what locks this file` File Explorer's context menu to select a file or folder
+* Run the installer. The installer will install this program to the `%LocalAppData%\Programs\ShowWhatProcessLocksFile` folder and add a `Show what locks this file` Windows File Explorer context menu element.
+* Use `Show what locks this file` in the ' File Explorer' context menu to select a file or folder
 * To terminate a process, select it and open a context menu by clicking the right mouse button
-* If you want to uninstall the program, use `Control Panel\Programs\Programs and Features`. Uninstaller will remove an integration with the context menu and all installed files.
+* If you want to uninstall the program, use `Control Panel\Programs\Programs and Features`. The uninstaller will remove the integration from the context menu and all installed files.
 
 ## How to build
 
